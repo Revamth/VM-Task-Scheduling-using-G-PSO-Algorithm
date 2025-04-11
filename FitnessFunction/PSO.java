@@ -1,90 +1,71 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package FitnessFunction;
 
 import net.sourceforge.jswarm_pso.Swarm;
-import FitnessFunction.Scheduler;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- *
- * @author HP
- */
 public class PSO {
-
-    private static SchedulerParticle particles[];
-
-    public static Scheduler ff = new Scheduler();
-
+    private static SchedulerParticle[] particles;
+    private static Scheduler ff = new Scheduler();
     private static Swarm swarm = new Swarm(Constant.POPULATION_SIZE, new SchedulerParticle(), ff);
 
     public PSO() {
-
         initParticles();
-
     }
 
     public double[] run() {
-
         swarm.setMinPosition(0);
-
         swarm.setMaxPosition(Constant.NO_OF_DATA_CENTERS - 1);
-
         swarm.setMaxMinVelocity(0.5);
-
         swarm.setParticles(particles);
-
         swarm.setParticleUpdate(new SchedulerParticleUpdate(new SchedulerParticle()));
 
-        for (int i = 0; i < 500; i++) {
-
+        List<Double> makespanLog = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
             swarm.evolve();
-
+            double fitness = Scheduler.calculateMakespan(swarm.getBestParticle().getBestPosition());
+            makespanLog.add(fitness);
             if (i % 10 == 0) {
-
-                System.out.printf("Gloabl best at iteration (%d): %f\n", i, swarm.getBestFitness());
-
+                System.out.printf("PSO Iteration %d: Makespan = %f\n", i, fitness);
             }
-
         }
 
-        System.out.println("\nThe best fitness value: " + swarm.getBestFitness() + " Best makespan: "
-                + ff.calcMakespan(swarm.getBestParticle().getBestPosition()));
-
-        System.out.println("The best solution is: ");
-
-        SchedulerParticle bestParticle = (SchedulerParticle) swarm.getBestParticle();
-
-        System.out.println(bestParticle.toString());
-
+        saveLogToCSV(makespanLog, "pso_makespan.csv");
         return swarm.getBestPosition();
-
     }
 
     public void printBestFitness() {
-
-        System.out.println("\nThe best fitness value: " + swarm.getBestFitness() + " Best makespan: "
-                + ff.calcMakespan(swarm.getBestParticle().getBestPosition()));
-
-    }
-
-    public double[][] getCommunTimeMatrix() {
-        return ff.getCoumnTimeMatrix();
+        double best = Scheduler.calculateMakespan(swarm.getBestParticle().getBestPosition());
+        System.out.println("\nThe best fitness value: " + swarm.getBestFitness() + " Best makespan: " + best);
     }
 
     public double[][] getExecTimeMatrix() {
         return ff.getExecTimeMatrix();
     }
 
-    private static void initParticles() {
+    public double[][] getCommunTimeMatrix() {
+        return ff.getCommunTimeMatrix();
+    }
 
+    private void initParticles() {
         particles = new SchedulerParticle[Constant.POPULATION_SIZE];
-
-        for (int i = 0; i < Constant.POPULATION_SIZE; ++i)
-
+        for (int i = 0; i < Constant.POPULATION_SIZE; ++i) {
             particles[i] = new SchedulerParticle();
+        }
+    }
 
+    private void saveLogToCSV(List<Double> log, String filename) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+            writer.write("Iteration,Makespan\n");
+            for (int i = 0; i < log.size(); i++) {
+                writer.write(i + "," + log.get(i) + "\n");
+            }
+            System.out.println("Saved PSO makespan log to " + filename);
+        } catch (IOException e) {
+            System.out.println("Error writing PSO log: " + e.getMessage());
+        }
     }
 }

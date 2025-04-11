@@ -5,26 +5,14 @@ import net.sourceforge.jswarm_pso.FitnessFunction;
 public class Scheduler extends FitnessFunction {
     private static double[][] execTimeMatrix, communTimeMatrix;
 
-    Scheduler() {
+    public Scheduler() {
         super(false);
         initMatrices();
     }
 
     @Override
     public double evaluate(double[] position) {
-        // double alpha = 0.3;
-        // return alpha * calcTotalTime(position) + (1 - alpha) *
-        // calcMakespan(position);
-        return calcMakespan(position);
-    }
-
-    private double calcTotalTime(double[] position) {
-        double totalCost = 0;
-        for (int i = 0; i < Constant.NO_OF_TASKS; i++) {
-            int dcId = (int) position[i];
-            totalCost += execTimeMatrix[i][dcId] + communTimeMatrix[i][dcId];
-        }
-        return totalCost;
+        return calculateMakespan(position);
     }
 
     public double calcMakespan(double[] position) {
@@ -35,22 +23,25 @@ public class Scheduler extends FitnessFunction {
             int dcId = (int) position[i];
             if (dcWorkingTime[dcId] != 0)
                 --dcWorkingTime[dcId];
+
             dcWorkingTime[dcId] += execTimeMatrix[i][dcId] + communTimeMatrix[i][dcId];
             makespan = Math.max(makespan, dcWorkingTime[dcId]);
         }
-        return makespan;
+
+        // Convert to seconds
+        return makespan / 1000.0;
     }
 
-    public double[][] getExecTimeMatrix() {
+    public static double[][] getExecTimeMatrix() {
         return execTimeMatrix;
     }
 
-    public double[][] getCoumnTimeMatrix() {
+    public static double[][] getCommunTimeMatrix() { // ✅ fixed typo
         return communTimeMatrix;
     }
 
-    private void initMatrices() {
-        System.out.println("Initializing input matrices (e.g. exec time & communication time matrices");
+    public static void initMatrices() {
+        System.out.println("Initializing input matrices (e.g. exec time & communication time matrices)");
         execTimeMatrix = new double[Constant.NO_OF_TASKS][Constant.NO_OF_DATA_CENTERS];
         communTimeMatrix = new double[Constant.NO_OF_TASKS][Constant.NO_OF_DATA_CENTERS];
 
